@@ -11,15 +11,15 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/:walletId', WalletController.getWallet);
-router.post('/:walletId/fund', validateFund, WalletController.fundWallet);
+router.get('/:wallet_id', WalletController.getWallet);
+router.post('/:wallet_id/fund', validateFund, WalletController.fundWallet);
 router.post(
-  '/:walletId/transfer',
+  '/:wallet_id/transfer',
   validateTransfer,
   WalletController.transferFunds,
 );
 router.post(
-  '/:walletId/withdraw',
+  '/:wallet_id/withdraw',
   validateWithdraw,
   WalletController.withdrawFunds,
 );

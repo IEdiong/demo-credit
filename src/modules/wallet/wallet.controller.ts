@@ -8,7 +8,7 @@ export const getWallet = async (
 ): Promise<void> => {
   try {
     const result = await WalletService.getWallet(
-      req.params.walletId as string,
+      req.params.wallet_id as string,
       req.user!.id,
     );
     res.status(200).json({ status: 'success', data: result });
@@ -26,7 +26,7 @@ export const fundWallet = async (
 ): Promise<void> => {
   try {
     const result = await WalletService.fundWallet({
-      walletId: req.params.walletId as string,
+      wallet_id: req.params.wallet_id as string,
       userId: req.user!.id,
       amount: Number(req.body.amount),
     });
@@ -45,9 +45,9 @@ export const transferFunds = async (
 ): Promise<void> => {
   try {
     const result = await WalletService.transferFunds({
-      walletId: req.params.walletId as string,
+      wallet_id: req.params.wallet_id as string,
       userId: req.user!.id,
-      recipientEmail: req.body.recipientEmail,
+      recipient_email: req.body.recipient_email,
       amount: Number(req.body.amount),
       description: req.body.description,
     });
@@ -66,7 +66,7 @@ export const withdrawFunds = async (
 ): Promise<void> => {
   try {
     const result = await WalletService.withdrawFunds({
-      walletId: req.params.walletId as string,
+      wallet_id: req.params.wallet_id as string,
       userId: req.user!.id,
       amount: Number(req.body.amount),
     });

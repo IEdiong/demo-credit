@@ -61,7 +61,7 @@ describe('WalletService - fundWallet', () => {
       });
 
     const result = await WalletService.fundWallet({
-      walletId,
+      wallet_id: walletId,
       userId,
       amount: 500,
     });
@@ -77,7 +77,7 @@ describe('WalletService - fundWallet', () => {
     });
 
     await expect(
-      WalletService.fundWallet({ walletId, userId, amount: 500 }),
+      WalletService.fundWallet({ wallet_id: walletId, userId, amount: 500 }),
     ).rejects.toMatchObject({ status: 404, message: 'Wallet not found' });
   });
 
@@ -92,7 +92,7 @@ describe('WalletService - fundWallet', () => {
     });
 
     await expect(
-      WalletService.fundWallet({ walletId, userId, amount: 500 }),
+      WalletService.fundWallet({ wallet_id: walletId, userId, amount: 500 }),
     ).rejects.toMatchObject({ status: 403 });
   });
 });
@@ -117,7 +117,7 @@ describe('WalletService - withdrawFunds', () => {
       });
 
     const result = await WalletService.withdrawFunds({
-      walletId,
+      wallet_id: walletId,
       userId,
       amount: 500,
     });
@@ -133,7 +133,7 @@ describe('WalletService - withdrawFunds', () => {
     });
 
     await expect(
-      WalletService.withdrawFunds({ walletId, userId, amount: 500 }),
+      WalletService.withdrawFunds({ wallet_id: walletId, userId, amount: 500 }),
     ).rejects.toMatchObject({ status: 400, message: 'Insufficient balance' });
   });
 });
@@ -152,9 +152,9 @@ describe('WalletService - transferFunds', () => {
 
     await expect(
       WalletService.transferFunds({
-        walletId,
+        wallet_id: walletId,
         userId,
-        recipientEmail: 'recipient@example.com',
+        recipient_email: 'recipient@example.com',
         amount: 500,
       }),
     ).rejects.toMatchObject({ status: 400, message: 'Insufficient balance' });
@@ -173,9 +173,9 @@ describe('WalletService - transferFunds', () => {
 
     await expect(
       WalletService.transferFunds({
-        walletId,
+        wallet_id: walletId,
         userId,
-        recipientEmail: 'nobody@example.com',
+        recipient_email: 'nobody@example.com',
         amount: 100,
       }),
     ).rejects.toMatchObject({ status: 404, message: 'Recipient not found' });
@@ -201,9 +201,9 @@ describe('WalletService - transferFunds', () => {
 
     await expect(
       WalletService.transferFunds({
-        walletId,
+        wallet_id: walletId,
         userId,
-        recipientEmail: 'recipient@example.com',
+        recipient_email: 'recipient@example.com',
         amount: 100,
       }),
     ).rejects.toMatchObject({
@@ -234,9 +234,9 @@ describe('WalletService - transferFunds', () => {
       });
 
     const result = await WalletService.transferFunds({
-      walletId,
+      wallet_id: walletId,
       userId,
-      recipientEmail: 'recipient@example.com',
+      recipient_email: 'recipient@example.com',
       amount: 100,
     });
 

@@ -12,7 +12,7 @@ export const validateFund = [amountValidation, handleValidationErrors];
 export const validateTransfer = [
   amountValidation,
 
-  body('recipientEmail')
+  body('recipient_email')
     .trim()
     .notEmpty()
     .withMessage('Recipient email is required')

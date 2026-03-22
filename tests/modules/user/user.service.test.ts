@@ -22,10 +22,10 @@ const mockIsBlacklisted = blacklistUtil.isBlacklisted as jest.Mock;
 const mockDb = db as jest.MockedFunction<any>;
 
 const registerPayload = {
-  firstName: 'John',
-  lastName: 'Doe',
+  first_name: 'John',
+  last_name: 'Doe',
   email: 'john@example.com',
-  phoneNumber: '08012345678',
+  phone_number: '08012345678',
   password: 'password123',
 };
 

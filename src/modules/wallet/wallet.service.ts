@@ -7,33 +7,33 @@ import {
 } from '../../utils/uuid';
 
 interface FundPayload {
-  walletId: string;
+  wallet_id: string;
   userId: string;
   amount: number;
 }
 
 interface TransferPayload {
-  walletId: string;
+  wallet_id: string;
   userId: string;
-  recipientEmail: string;
+  recipient_email: string;
   amount: number;
   description?: string;
 }
 
 interface WithdrawPayload {
-  walletId: string;
+  wallet_id: string;
   userId: string;
   amount: number;
 }
 
-const getWalletById = async (walletId: string) => {
+const getWalletById = async (wallet_id: string) => {
   return db('wallets')
-    .where({ id: uuidToBinary(walletId) })
+    .where({ id: uuidToBinary(wallet_id) })
     .first();
 };
 
-const verifyWalletOwnership = async (walletId: string, userId: string) => {
-  const wallet = await getWalletById(walletId);
+const verifyWalletOwnership = async (wallet_id: string, userId: string) => {
+  const wallet = await getWalletById(wallet_id);
 
   if (!wallet) {
     throw { status: 404, message: 'Wallet not found' };
@@ -46,8 +46,8 @@ const verifyWalletOwnership = async (walletId: string, userId: string) => {
   return wallet;
 };
 
-export const getWallet = async (walletId: string, userId: string) => {
-  const wallet = await verifyWalletOwnership(walletId, userId);
+export const getWallet = async (wallet_id: string, userId: string) => {
+  const wallet = await verifyWalletOwnership(wallet_id, userId);
 
   return {
     id: binaryToUUID(wallet.id),
@@ -57,19 +57,19 @@ export const getWallet = async (walletId: string, userId: string) => {
 };
 
 export const fundWallet = async (payload: FundPayload) => {
-  const { walletId, userId, amount } = payload;
+  const { wallet_id, userId, amount } = payload;
 
-  const wallet = await verifyWalletOwnership(walletId, userId);
+  const wallet = await verifyWalletOwnership(wallet_id, userId);
   const reference = generateReference();
 
   await db.transaction(async (trx) => {
     await trx('wallets')
-      .where({ id: uuidToBinary(walletId) })
+      .where({ id: uuidToBinary(wallet_id) })
       .increment('balance', amount);
 
     await trx('transactions').insert({
       id: uuidToBinary(generateUUID()),
-      wallet_id: uuidToBinary(walletId),
+      wallet_id: uuidToBinary(wallet_id),
       type: 'credit',
       amount,
       reference,
@@ -77,7 +77,7 @@ export const fundWallet = async (payload: FundPayload) => {
     });
   });
 
-  const updatedWallet = await getWalletById(walletId);
+  const updatedWallet = await getWalletById(wallet_id);
 
   return {
     reference,
@@ -86,9 +86,9 @@ export const fundWallet = async (payload: FundPayload) => {
 };
 
 export const transferFunds = async (payload: TransferPayload) => {
-  const { walletId, userId, recipientEmail, amount, description } = payload;
+  const { wallet_id, userId, recipient_email, amount, description } = payload;
 
-  const senderWallet = await verifyWalletOwnership(walletId, userId);
+  const senderWallet = await verifyWalletOwnership(wallet_id, userId);
 
   if (Number(senderWallet.balance) < amount) {
     throw { status: 400, message: 'Insufficient balance' };
@@ -96,7 +96,7 @@ export const transferFunds = async (payload: TransferPayload) => {
 
   // Resolve recipient by email
   const recipientUser = await db('users')
-    .where({ email: recipientEmail })
+    .where({ email: recipient_email })
     .first();
   if (!recipientUser) {
     throw { status: 404, message: 'Recipient not found' };
@@ -111,7 +111,7 @@ export const transferFunds = async (payload: TransferPayload) => {
   }
 
   // Prevent self-transfer
-  if (binaryToUUID(recipientWallet.id) === walletId) {
+  if (binaryToUUID(recipientWallet.id) === wallet_id) {
     throw {
       status: 400,
       message: 'You cannot transfer funds to your own wallet',
@@ -119,17 +119,17 @@ export const transferFunds = async (payload: TransferPayload) => {
   }
 
   const reference = generateReference();
-  const transferDescription = description || `Transfer to ${recipientEmail}`;
+  const transferDescription = description || `Transfer to ${recipient_email}`;
 
   await db.transaction(async (trx) => {
     // Debit sender
     await trx('wallets')
-      .where({ id: uuidToBinary(walletId) })
+      .where({ id: uuidToBinary(wallet_id) })
       .decrement('balance', amount);
 
     await trx('transactions').insert({
       id: uuidToBinary(generateUUID()),
-      wallet_id: uuidToBinary(walletId),
+      wallet_id: uuidToBinary(wallet_id),
       type: 'debit',
       amount,
       reference,
@@ -151,7 +151,7 @@ export const transferFunds = async (payload: TransferPayload) => {
     });
   });
 
-  const updatedWallet = await getWalletById(walletId);
+  const updatedWallet = await getWalletById(wallet_id);
 
   return {
     reference,
@@ -160,9 +160,9 @@ export const transferFunds = async (payload: TransferPayload) => {
 };
 
 export const withdrawFunds = async (payload: WithdrawPayload) => {
-  const { walletId, userId, amount } = payload;
+  const { wallet_id, userId, amount } = payload;
 
-  const wallet = await verifyWalletOwnership(walletId, userId);
+  const wallet = await verifyWalletOwnership(wallet_id, userId);
 
   if (Number(wallet.balance) < amount) {
     throw { status: 400, message: 'Insufficient balance' };
@@ -172,12 +172,12 @@ export const withdrawFunds = async (payload: WithdrawPayload) => {
 
   await db.transaction(async (trx) => {
     await trx('wallets')
-      .where({ id: uuidToBinary(walletId) })
+      .where({ id: uuidToBinary(wallet_id) })
       .decrement('balance', amount);
 
     await trx('transactions').insert({
       id: uuidToBinary(generateUUID()),
-      wallet_id: uuidToBinary(walletId),
+      wallet_id: uuidToBinary(wallet_id),
       type: 'debit',
       amount,
       reference,
@@ -185,7 +185,7 @@ export const withdrawFunds = async (payload: WithdrawPayload) => {
     });
   });
 
-  const updatedWallet = await getWalletById(walletId);
+  const updatedWallet = await getWalletById(wallet_id);
 
   return {
     reference,

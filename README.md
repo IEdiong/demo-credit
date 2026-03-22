@@ -277,7 +277,7 @@ UUIDv7 is used for all primary keys. It is time-ordered (sequential), giving bet
 
 ### Prerequisites
 
-- Node.js (LTS)
+- Node.js v22 (LTS)
 - MySQL database
 
 ### Steps
@@ -288,17 +288,17 @@ git clone <repo-url>
 cd demo-credit
 
 # Install dependencies
-npm install
+yarn install
 
 # Copy environment variables
 cp .env.example .env
 # Fill in your DB credentials and JWT secret in .env
 
 # Run database migrations
-npm run migrate
+yarn migrate
 
 # Start development server
-npm run dev
+yarn dev
 ```
 
 ### Environment Variables
@@ -312,6 +312,7 @@ DB_PASSWORD=yourpassword
 DB_NAME=demo_credit
 JWT_SECRET=yourjwtsecret
 ADJUTOR_API_KEY=youradjutorapikey
+ADJUTOR_BASE_URL=https://adjutor.lendsqr.com/v2
 ```
 
 ---
@@ -320,10 +321,10 @@ ADJUTOR_API_KEY=youradjutorapikey
 
 ```bash
 # Run all tests
-npm run test
+yarn test
 
 # Run tests with coverage
-npm run test:coverage
+yarn test:coverage
 ```
 
 Tests cover both positive and negative scenarios for all modules including blacklist rejection, insufficient balance, and invalid transfer targets.
