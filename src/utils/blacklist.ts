@@ -1,5 +1,38 @@
 import { ofetch, FetchError } from 'ofetch';
 
+interface KarmaType {
+  karma: string;
+}
+
+interface KarmaIdentityType {
+  identity_type: string;
+}
+
+interface ReportingEntity {
+  name: string;
+  email: string;
+}
+
+interface KarmaData {
+  karma_identity: string;
+  amount_in_contention: string;
+  reason: string | null;
+  default_date: string;
+  karma_type: KarmaType;
+  karma_identity_type: KarmaIdentityType;
+  reporting_entity: ReportingEntity;
+}
+
+interface AdjutorKarmaResponse {
+  status: string;
+  message: string;
+  data: KarmaData | null;
+  meta: {
+    cost: number;
+    balance: number;
+  };
+}
+
 /**
  * Checks if an email is flagged on the Lendsqr Adjutor Karma blacklist.
  * Returns true if the user is blacklisted, false if they are clean.
@@ -8,13 +41,16 @@ import { ofetch, FetchError } from 'ofetch';
  */
 export const isBlacklisted = async (email: string): Promise<boolean> => {
   try {
-    const response = await ofetch(`/verification/karma/${email}`, {
-      baseURL: process.env.ADJUTOR_BASE_URL,
-      headers: {
-        Authorization: `Bearer ${process.env.ADJUTOR_API_KEY}`,
+    const response = await ofetch<AdjutorKarmaResponse>(
+      `/verification/karma/${email}`,
+      {
+        baseURL: process.env.ADJUTOR_BASE_URL,
+        headers: {
+          Authorization: `Bearer ${process.env.ADJUTOR_API_KEY}`,
+        },
+        retry: 0,
       },
-      retry: 0,
-    });
+    );
 
     return response?.data !== null && response?.data !== undefined;
   } catch (error) {

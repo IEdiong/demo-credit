@@ -5,10 +5,10 @@ import { isBlacklisted } from '../../utils/blacklist';
 import { generateUUID, uuidToBinary, binaryToUUID } from '../../utils/uuid';
 
 interface RegisterPayload {
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  phone_number: string;
+  phoneNumber: string;
   password: string;
 }
 
@@ -19,24 +19,24 @@ interface LoginPayload {
 
 interface UserResponse {
   id: string;
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  phone_number: string;
-  wallet_id: string;
-  created_at: Date;
+  phoneNumber: string;
+  walletId: string;
+  createdAt: Date;
 }
 
 const SALT_ROUNDS = 10;
 
 const formatUser = (user: any, walletId: string): UserResponse => ({
   id: binaryToUUID(user.id),
-  first_name: user.first_name,
-  last_name: user.last_name,
+  firstName: user.first_name,
+  lastName: user.last_name,
   email: user.email,
-  phone_number: user.phone_number,
-  wallet_id: walletId,
-  created_at: user.created_at,
+  phoneNumber: user.phone_number,
+  walletId: walletId,
+  createdAt: user.created_at,
 });
 
 const generateToken = (userId: string): string => {
@@ -46,7 +46,7 @@ const generateToken = (userId: string): string => {
 };
 
 export const registerUser = async (payload: RegisterPayload) => {
-  const { first_name, last_name, email, phone_number, password } = payload;
+  const { firstName, lastName, email, phoneNumber, password } = payload;
 
   // Check Karma blacklist before any DB operations
   const blacklisted = await isBlacklisted(email);
@@ -60,7 +60,7 @@ export const registerUser = async (payload: RegisterPayload) => {
   // Check for existing email or phone
   const existingUser = await db('users')
     .where({ email })
-    .orWhere({ phone_number })
+    .orWhere({ phone_number: phoneNumber })
     .first();
 
   if (existingUser) {
@@ -78,10 +78,10 @@ export const registerUser = async (payload: RegisterPayload) => {
   await db.transaction(async (trx) => {
     await trx('users').insert({
       id: uuidToBinary(userId),
-      first_name,
-      last_name,
+      first_name: firstName,
+      last_name: lastName,
       email,
-      phone_number,
+      phone_number: phoneNumber,
       password: hashedPassword,
     });
 
@@ -97,11 +97,11 @@ export const registerUser = async (payload: RegisterPayload) => {
   return {
     user: {
       id: userId,
-      first_name,
-      last_name,
+      firstName,
+      lastName,
       email,
-      phone_number,
-      wallet_id: walletId,
+      phoneNumber,
+      walletId,
     },
     token,
   };

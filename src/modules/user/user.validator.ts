@@ -1,63 +1,45 @@
-import { Request, Response, NextFunction } from 'express';
+import { body } from 'express-validator';
+import { handleValidationErrors } from '../../middlewares/validation';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_REGEX = /^[0-9]{10,15}$/;
+export const validateRegister = [
+  body('firstName').trim().notEmpty().withMessage('First name is required'),
 
-export const validateRegister = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
-  const { first_name, last_name, email, phone_number, password } = req.body;
+  body('lastName').trim().notEmpty().withMessage('Last name is required'),
 
-  if (!first_name || !last_name || !email || !phone_number || !password) {
-    res
-      .status(400)
-      .json({ status: 'error', message: 'All fields are required' });
-    return;
-  }
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Invalid email address')
+    .normalizeEmail(),
 
-  if (!EMAIL_REGEX.test(email)) {
-    res.status(400).json({ status: 'error', message: 'Invalid email address' });
-    return;
-  }
+  body('phoneNumber')
+    .trim()
+    .notEmpty()
+    .withMessage('Phone number is required')
+    .isMobilePhone('any')
+    .withMessage('Invalid phone number'),
 
-  if (!PHONE_REGEX.test(phone_number)) {
-    res.status(400).json({ status: 'error', message: 'Invalid phone number' });
-    return;
-  }
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters'),
 
-  if (password.length < 6) {
-    res
-      .status(400)
-      .json({
-        status: 'error',
-        message: 'Password must be at least 6 characters',
-      });
-    return;
-  }
+  handleValidationErrors,
+];
 
-  next();
-};
+export const validateLogin = [
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Invalid email address')
+    .normalizeEmail(),
 
-export const validateLogin = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
-  const { email, password } = req.body;
+  body('password').notEmpty().withMessage('Password is required'),
 
-  if (!email || !password) {
-    res
-      .status(400)
-      .json({ status: 'error', message: 'Email and password are required' });
-    return;
-  }
-
-  if (!EMAIL_REGEX.test(email)) {
-    res.status(400).json({ status: 'error', message: 'Invalid email address' });
-    return;
-  }
-
-  next();
-};
+  handleValidationErrors,
+];
