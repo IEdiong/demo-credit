@@ -1,6 +1,7 @@
 import express from 'express';
 import userRoutes from './modules/user/user.routes';
 import walletRoutes from './modules/wallet/wallet.routes';
+import transactionRoutes from './modules/transaction/transaction.routes';
 
 const app = express();
 
@@ -10,6 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/wallets', walletRoutes);
+app.use('/api/v1/wallets', transactionRoutes);
 
 // Health check
 app.get('/health', (_, res) => {

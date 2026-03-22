@@ -284,7 +284,7 @@ UUIDv7 is used for all primary keys. It is time-ordered (sequential), giving bet
 
 ```bash
 # Clone the repository
-git clone <repo-url>
+git clone https://github.com/IEdiong/demo-credit
 cd demo-credit
 
 # Install dependencies
@@ -305,11 +305,11 @@ yarn dev
 
 ```env
 PORT=3000
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=yourpassword
-DB_NAME=demo_credit
+MYSQLHOST=localhost
+MYSQLPORT=3306
+MYSQLUSER=root
+MYSQLPASSWORD=yourpassword
+MYSQLDATABASE=demo_credit
 JWT_SECRET=yourjwtsecret
 ADJUTOR_API_KEY=youradjutorapikey
 ADJUTOR_BASE_URL=https://adjutor.lendsqr.com/v2

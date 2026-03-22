@@ -24,7 +24,7 @@ interface KarmaData {
 }
 
 interface AdjutorKarmaResponse {
-  status: string;
+  status: 'success' | 'error';
   message: string;
   data: KarmaData | null;
   meta: {
@@ -59,6 +59,6 @@ export const isBlacklisted = async (email: string): Promise<boolean> => {
     }
 
     console.error('[Blacklist Check Error]', error);
-    return false;
+    return true;
   }
 };
