@@ -14,7 +14,7 @@ const mockBlacklistResponse = {
   data: {
     karma_identity: blacklistedEmail,
     amount_in_contention: '0.00',
-    reason: null,
+    reason: 'Some negative reason for blacklisting',
     default_date: '2020-05-18',
     karma_type: { karma: 'Others' },
     karma_identity_type: { identity_type: 'Email' },
@@ -26,7 +26,9 @@ const mockBlacklistResponse = {
 describe('isBlacklisted', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    consoleErrorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -52,12 +54,12 @@ describe('isBlacklisted', () => {
     expect(result).toBe(false);
   });
 
-  it('should return true and log on unexpected API errors', async () => {
+  it('should return false and log on unexpected API errors', async () => {
     mockFetch.mockRejectedValue(new Error('Network Error'));
 
     const result = await isBlacklisted(cleanEmail);
 
-    expect(result).toBe(true);
+    expect(result).toBe(false);
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       '[Blacklist Check Error]',
       expect.any(Error),

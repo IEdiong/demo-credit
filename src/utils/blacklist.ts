@@ -52,13 +52,13 @@ export const isBlacklisted = async (email: string): Promise<boolean> => {
       },
     );
 
-    return response?.data !== null && response?.data !== undefined;
+    return Boolean(response?.data?.reason);
   } catch (error) {
     if (error instanceof FetchError && error.response?.status === 404) {
       return false;
     }
 
     console.error('[Blacklist Check Error]', error);
-    return true;
+    return false;
   }
 };
