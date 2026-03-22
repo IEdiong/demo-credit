@@ -1,240 +1,112 @@
-import * as WalletService from '../../../src/modules/wallet/wallet.service';
-import { uuidv7 } from 'uuidv7';
-import { uuidToBinary } from '../../../src/utils/uuid';
+process.env.JWT_SECRET = 'test-secret';
 
+import * as UserService from '../../../src/modules/user/user.service';
+import * as blacklistUtil from '../../../src/utils/blacklist';
+import db from '../../../src/database/knex';
+
+jest.mock('../../../src/utils/blacklist');
 jest.mock('../../../src/database/knex', () => {
-  const mockTrx = {
+  const mockTrx: any = jest.fn();
+  mockTrx.insert = jest.fn().mockResolvedValue([1]);
+  mockTrx.mockReturnValue(mockTrx); // trx('tableName') returns mockTrx for chaining
+  const mockDb: any = jest.fn(() => ({
     where: jest.fn().mockReturnThis(),
-    increment: jest.fn().mockResolvedValue(1),
-    decrement: jest.fn().mockResolvedValue(1),
-    insert: jest.fn().mockResolvedValue([1]),
-  };
-  const mockDb: any = jest.fn();
+    orWhere: jest.fn().mockReturnThis(),
+    first: jest.fn().mockResolvedValue(null),
+  }));
   mockDb.transaction = jest.fn(async (cb: any) => cb(mockTrx));
   return { __esModule: true, default: mockDb };
 });
 
-import db from '../../../src/database/knex';
+const mockIsBlacklisted = blacklistUtil.isBlacklisted as jest.Mock;
 const mockDb = db as jest.MockedFunction<any>;
 
-const userId = uuidv7();
-const walletId = uuidv7();
-const recipientUserId = uuidv7();
-const recipientWalletId = uuidv7();
-
-const mockWallet = {
-  id: uuidToBinary(walletId),
-  user_id: uuidToBinary(userId),
-  balance: '1000.00',
-  created_at: new Date(),
+const registerPayload = {
+  firstName: 'John',
+  lastName: 'Doe',
+  email: 'john@example.com',
+  phoneNumber: '08012345678',
+  password: 'password123',
 };
 
-const mockRecipientUser = {
-  id: uuidToBinary(recipientUserId),
-  email: 'recipient@example.com',
-};
-
-const mockRecipientWallet = {
-  id: uuidToBinary(recipientWalletId),
-  user_id: uuidToBinary(recipientUserId),
-  balance: '500.00',
-};
-
-describe('WalletService - fundWallet', () => {
+describe('UserService - registerUser', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('should fund wallet successfully', async () => {
-    mockDb
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(mockWallet),
-      })
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest
-          .fn()
-          .mockResolvedValue({ ...mockWallet, balance: '1500.00' }),
-      });
-
-    const result = await WalletService.fundWallet({
-      walletId,
-      userId,
-      amount: 500,
+  it('should register a user successfully', async () => {
+    mockIsBlacklisted.mockResolvedValue(false);
+    mockDb.mockReturnValue({
+      where: jest.fn().mockReturnThis(),
+      orWhere: jest.fn().mockReturnThis(),
+      first: jest.fn().mockResolvedValue(null),
     });
 
-    expect(result).toHaveProperty('reference');
-    expect(result.balance).toBe(1500);
+    const result = await UserService.registerUser(registerPayload);
+
+    expect(result).toHaveProperty('token');
+    expect(result.user.email).toBe(registerPayload.email);
+    expect(result.user).not.toHaveProperty('password');
   });
 
-  it('should throw 404 if wallet not found', async () => {
+  it('should throw 403 if user is blacklisted', async () => {
+    mockIsBlacklisted.mockResolvedValue(true);
+
+    await expect(
+      UserService.registerUser(registerPayload),
+    ).rejects.toMatchObject({
+      status: 403,
+      message: 'We are unable to create an account for you at this time.',
+    });
+  });
+
+  it('should throw 409 if email already exists', async () => {
+    mockIsBlacklisted.mockResolvedValue(false);
+    mockDb.mockReturnValue({
+      where: jest.fn().mockReturnThis(),
+      orWhere: jest.fn().mockReturnThis(),
+      first: jest.fn().mockResolvedValue({ id: 'existing-user' }),
+    });
+
+    await expect(
+      UserService.registerUser(registerPayload),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+});
+
+describe('UserService - loginUser', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('should throw 401 if user does not exist', async () => {
     mockDb.mockReturnValue({
       where: jest.fn().mockReturnThis(),
       first: jest.fn().mockResolvedValue(null),
     });
 
     await expect(
-      WalletService.fundWallet({ walletId, userId, amount: 500 }),
-    ).rejects.toMatchObject({ status: 404, message: 'Wallet not found' });
-  });
-
-  it('should throw 403 if user does not own wallet', async () => {
-    const differentUserId = uuidv7();
-    mockDb.mockReturnValue({
-      where: jest.fn().mockReturnThis(),
-      first: jest
-        .fn()
-        .mockResolvedValue({
-          ...mockWallet,
-          user_id: uuidToBinary(differentUserId),
-        }),
-    });
-
-    await expect(
-      WalletService.fundWallet({ walletId, userId, amount: 500 }),
-    ).rejects.toMatchObject({ status: 403 });
-  });
-});
-
-describe('WalletService - withdrawFunds', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('should withdraw successfully', async () => {
-    mockDb
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(mockWallet),
-      })
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest
-          .fn()
-          .mockResolvedValue({ ...mockWallet, balance: '500.00' }),
-      });
-
-    const result = await WalletService.withdrawFunds({
-      walletId,
-      userId,
-      amount: 500,
-    });
-
-    expect(result).toHaveProperty('reference');
-    expect(result.balance).toBe(500);
-  });
-
-  it('should throw 400 for insufficient balance', async () => {
-    mockDb.mockReturnValue({
-      where: jest.fn().mockReturnThis(),
-      first: jest.fn().mockResolvedValue({ ...mockWallet, balance: '100.00' }),
-    });
-
-    await expect(
-      WalletService.withdrawFunds({ walletId, userId, amount: 500 }),
-    ).rejects.toMatchObject({ status: 400, message: 'Insufficient balance' });
-  });
-});
-
-describe('WalletService - transferFunds', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('should throw 400 for insufficient balance', async () => {
-    mockDb.mockReturnValue({
-      where: jest.fn().mockReturnThis(),
-      first: jest.fn().mockResolvedValue({ ...mockWallet, balance: '100.00' }),
-    });
-
-    await expect(
-      WalletService.transferFunds({
-        walletId,
-        userId,
-        recipientEmail: 'recipient@example.com',
-        amount: 500,
-      }),
-    ).rejects.toMatchObject({ status: 400, message: 'Insufficient balance' });
-  });
-
-  it('should throw 404 if recipient not found', async () => {
-    mockDb
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(mockWallet),
-      })
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(null),
-      });
-
-    await expect(
-      WalletService.transferFunds({
-        walletId,
-        userId,
-        recipientEmail: 'nobody@example.com',
-        amount: 100,
-      }),
-    ).rejects.toMatchObject({ status: 404, message: 'Recipient not found' });
-  });
-
-  it('should throw 400 on self-transfer', async () => {
-    mockDb
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(mockWallet),
-      })
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(mockRecipientUser),
-      })
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest
-          .fn()
-          .mockResolvedValue({
-            ...mockRecipientWallet,
-            id: uuidToBinary(walletId),
-          }),
-      });
-
-    await expect(
-      WalletService.transferFunds({
-        walletId,
-        userId,
-        recipientEmail: 'recipient@example.com',
-        amount: 100,
+      UserService.loginUser({
+        email: 'notfound@example.com',
+        password: 'password123',
       }),
     ).rejects.toMatchObject({
-      status: 400,
-      message: 'You cannot transfer funds to your own wallet',
+      status: 401,
+      message: 'Invalid email or password',
     });
   });
 
-  it('should transfer funds successfully', async () => {
-    mockDb
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(mockWallet),
-      })
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(mockRecipientUser),
-      })
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest.fn().mockResolvedValue(mockRecipientWallet),
-      })
-      .mockReturnValueOnce({
-        where: jest.fn().mockReturnThis(),
-        first: jest
-          .fn()
-          .mockResolvedValue({ ...mockWallet, balance: '900.00' }),
-      });
-
-    const result = await WalletService.transferFunds({
-      walletId,
-      userId,
-      recipientEmail: 'recipient@example.com',
-      amount: 100,
+  it('should throw 401 if password is incorrect', async () => {
+    mockDb.mockReturnValue({
+      where: jest.fn().mockReturnThis(),
+      first: jest.fn().mockResolvedValue({
+        id: Buffer.from('abc123'),
+        email: 'john@example.com',
+        password: 'wronghash',
+      }),
     });
 
-    expect(result).toHaveProperty('reference');
-    expect(result.balance).toBe(900);
+    await expect(
+      UserService.loginUser({
+        email: 'john@example.com',
+        password: 'wrongpassword',
+      }),
+    ).rejects.toMatchObject({ status: 401 });
   });
 });

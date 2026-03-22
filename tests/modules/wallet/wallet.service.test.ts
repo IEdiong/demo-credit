@@ -3,12 +3,13 @@ import { uuidv7 } from 'uuidv7';
 import { uuidToBinary } from '../../../src/utils/uuid';
 
 jest.mock('../../../src/database/knex', () => {
-  const mockTrx = {
-    where: jest.fn().mockReturnThis(),
-    increment: jest.fn().mockResolvedValue(1),
-    decrement: jest.fn().mockResolvedValue(1),
-    insert: jest.fn().mockResolvedValue([1]),
-  };
+  const mockTrx: any = jest.fn();
+  mockTrx.where = jest.fn().mockReturnThis();
+  mockTrx.increment = jest.fn().mockResolvedValue(1);
+  mockTrx.decrement = jest.fn().mockResolvedValue(1);
+  mockTrx.insert = jest.fn().mockResolvedValue([1]);
+  mockTrx.mockReturnValue(mockTrx); // trx('tableName') returns mockTrx for chaining
+
   const mockDb: any = jest.fn();
   mockDb.transaction = jest.fn(async (cb: any) => cb(mockTrx));
   return { __esModule: true, default: mockDb };
@@ -41,7 +42,10 @@ const mockRecipientWallet = {
 };
 
 describe('WalletService - fundWallet', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDb.mockReset(); // flush unconsumed mockReturnValueOnce values from prior tests
+  });
 
   it('should fund wallet successfully', async () => {
     mockDb
@@ -81,12 +85,10 @@ describe('WalletService - fundWallet', () => {
     const differentUserId = uuidv7();
     mockDb.mockReturnValue({
       where: jest.fn().mockReturnThis(),
-      first: jest
-        .fn()
-        .mockResolvedValue({
-          ...mockWallet,
-          user_id: uuidToBinary(differentUserId),
-        }),
+      first: jest.fn().mockResolvedValue({
+        ...mockWallet,
+        user_id: uuidToBinary(differentUserId),
+      }),
     });
 
     await expect(
@@ -96,7 +98,10 @@ describe('WalletService - fundWallet', () => {
 });
 
 describe('WalletService - withdrawFunds', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDb.mockReset();
+  });
 
   it('should withdraw successfully', async () => {
     mockDb
@@ -134,7 +139,10 @@ describe('WalletService - withdrawFunds', () => {
 });
 
 describe('WalletService - transferFunds', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDb.mockReset();
+  });
 
   it('should throw 400 for insufficient balance', async () => {
     mockDb.mockReturnValue({
@@ -185,12 +193,10 @@ describe('WalletService - transferFunds', () => {
       })
       .mockReturnValueOnce({
         where: jest.fn().mockReturnThis(),
-        first: jest
-          .fn()
-          .mockResolvedValue({
-            ...mockRecipientWallet,
-            id: uuidToBinary(walletId),
-          }),
+        first: jest.fn().mockResolvedValue({
+          ...mockRecipientWallet,
+          id: uuidToBinary(walletId),
+        }),
       });
 
     await expect(
