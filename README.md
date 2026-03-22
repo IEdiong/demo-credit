@@ -4,6 +4,20 @@
 
 Demo Credit is an MVP wallet service built for a mobile lending application. It enables borrowers to receive loans and make repayments through a wallet system. The service exposes a REST API that supports account creation, wallet funding, fund transfers between users, and withdrawals. Users flagged on the Lendsqr Adjutor Karma blacklist are prevented from onboarding.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [E-R Diagram](#e-r-diagram)
+- [API Documentation](#api-documentation)
+- [Key Design Decisions](#key-design-decisions)
+- [Assumptions](#assumptions)
+- [Setup & Installation](#setup--installation)
+- [Environment Variables](#environment-variables)
+- [Running Tests](#running-tests)
+- [Commit Convention](#commit-convention)
+
 ## Tech Stack
 
 | Layer          | Technology             |
